@@ -3,6 +3,8 @@ pragma solidity ^0.4.23;
 import "./CollectionBasic.sol";
 import "../KarmaCoin.sol";
 import "../GyanCoin.sol";
+import "../ScholarshipContract.sol";
+import "../ownership/rbac/RBAC.sol";
 
 /**
  * @title BaseCollection
@@ -10,12 +12,13 @@ import "../GyanCoin.sol";
  * @dev Basic version of collection contract
  * @dev Handled collection create, joining and assessment
  */
-contract BaseCollection is CollectionBasic {
+contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 
 	using SafeMath for uint256;
 
 	KarmaCoin public karmaCoin;
 	GyanCoin public gyanCoin;
+	ScholarshipContract public scholarshipContract;
 
 	struct Collection {
 		bytes32 hash;
@@ -25,6 +28,8 @@ contract BaseCollection is CollectionBasic {
 		address teacher;
 		uint256 timestamp;
 		mapping(address => uint256) participants;
+		mapping(address => uint256) droppedParticipants;
+		bytes32[] topics;
 		address[] participantIndex;
 		mapping(bytes32 => uint256) assessmentRules;
 		bytes32[] assessmentRuleKeys;
@@ -34,21 +39,26 @@ contract BaseCollection is CollectionBasic {
 
 	mapping(bytes32 => Collection) collections;
 
-	function BaseCollection(KarmaCoin _karma, GyanCoin _gyan) {
+	function BaseCollection(KarmaCoin _karma, GyanCoin _gyan, ScholarshipContract _scholarships) {
 		require(_karma != address(0));
 		require(_gyan != address(0));
+		require(_scholarships != address(0));
 
 		karmaCoin = _karma;
 		gyanCoin = _gyan;
+		scholarshipContract = _scholarships;
+
 	}
 
-	function create(bytes32 _id, address _teacherAddress, bytes32 _type, bytes32 _hash, uint256 _academicGyan, uint256 _nonAcademicGyan, bytes32[] _assessmentRuleKeys, uint256[] _assessmentRuleValues) public returns (bool) {
+	function create(bytes32 _id, address _teacherAddress, bytes32 _type, bytes32 _hash, uint256 _academicGyan, uint256 _nonAcademicGyan, bytes32[] _assessmentRuleKeys, uint256[] _assessmentRuleValues, bytes32[] _topics) public onlyRole(ROLE_PARTNER) returns (bool) {
 		require(_id[0] != 0);
+		require(collections[_id].timestamp == 0);
 		require(_teacherAddress != address(0));
 		require(_type[0] != 0);
 		require(_hash[0] != 0);
 		require(_academicGyan > 0);
 		require(_nonAcademicGyan > 0);
+		require(_topics.length > 0);
 		require(_assessmentRuleKeys.length == _assessmentRuleValues.length);
 
 		collections[_id].teacher = _teacherAddress;
@@ -57,6 +67,7 @@ contract BaseCollection is CollectionBasic {
 		collections[_id].academicGyan = _academicGyan;
 		collections[_id].nonAcademicGyan = _nonAcademicGyan;
 		collections[_id].timestamp = now;
+		collections[_id].topics = _topics;
 		// Map _assessmentRules array to contract variables
 		for (uint i = 0; i < _assessmentRuleKeys.length; i++) {
 			collections[_id].assessmentRules[_assessmentRuleKeys[i]] = _assessmentRuleValues[i];
@@ -65,9 +76,9 @@ contract BaseCollection is CollectionBasic {
 		return true;
 	}
 
-	function getData(bytes32 _id) public view returns (bytes32, bytes32, bytes32[], uint256, uint256, address, uint256) {
+	function getData(bytes32 _id) public view returns (bytes32, bytes32[], bytes32[], uint256, uint256, address, uint256) {
 		// Solidity does not yet support returning structs to web3
-		return (collections[_id]._type, collections[_id].hash, collections[_id].assessmentRuleKeys, collections[_id].academicGyan, collections[_id].nonAcademicGyan , collections[_id].teacher, collections[_id].timestamp);
+		return (collections[_id]._type, collections[_id].topics, collections[_id].assessmentRuleKeys, collections[_id].academicGyan, collections[_id].nonAcademicGyan , collections[_id].teacher, collections[_id].timestamp);
 	}
 
 	function getTeacher(bytes32 _id) public view returns (address) {
@@ -106,23 +117,48 @@ contract BaseCollection is CollectionBasic {
 		return collections[_id].assessmentRules[_assessmentRule];
 	}
 
-	function join(bytes32 _id, address _participantAddress, address _burnAddress) public returns (bool) {
+	function join(bytes32 _id, address _participantAddress, bytes32 _scholarshipId) public onlyRole(ROLE_PARTNER) returns (bool) {
 		require(_id[0] != 0);
+		require(collections[_id].timestamp != 0);
 		require(_participantAddress != address(0));
-		require(_burnAddress != address(0));
 		// Make sure this participant does not already exist for this collection
 		require(collections[_id].participants[_participantAddress] == 0);
 
-		karmaCoin.burnFrom(_burnAddress, getKarmaToBurn(collections[_id].academicGyan + collections[_id].nonAcademicGyan));
+		if (_scholarshipId == 'NA') {
+			// Burn from student wallet
+			require(karmaCoin.balanceOf(_participantAddress) >= getKarmaToBurn(collections[_id].academicGyan + collections[_id].nonAcademicGyan));
+			karmaCoin.burnFrom(_participantAddress, getKarmaToBurn(collections[_id].academicGyan + collections[_id].nonAcademicGyan));
+		} else {
+			require(scholarshipContract.getTimestamp(_scholarshipId) != 0);
+			require(scholarshipContract.getParticipant(_scholarshipId, _participantAddress) != 0);
+			require(karmaCoin.balanceOf(scholarshipContract.getWalletAddress(_scholarshipId)) >= getKarmaToBurn(collections[_id].academicGyan + collections[_id].nonAcademicGyan)); // this scholarship has enough karma balance
+			// Burn from scholarship wallet
+			karmaCoin.burnFrom(scholarshipContract.getWalletAddress(_scholarshipId), getKarmaToBurn(collections[_id].academicGyan + collections[_id].nonAcademicGyan));
+		}
 		collections[_id].participants[_participantAddress] = now;
 		collections[_id].participantIndex.push(_participantAddress);
 		return true;
 	}
 
-	function assess(bytes32 _id, address _participantAddress, bytes32 _assessmentRule) public returns (bool) {
+	function drop(bytes32 _id, address _participantAddress) public onlyRole(ROLE_PARTNER) returns (bool) {
 		require(_id[0] != 0);
+		require(collections[_id].timestamp != 0);
+		require(_participantAddress != address(0));
+		// Verify that the participant has not been assessed yet. Participants cannot drop after they have been assessed.
+		require(collections[_id].results[_participantAddress] == 0);
+		require(collections[_id].droppedParticipants[_participantAddress] == 0);
+
+		collections[_id].droppedParticipants[_participantAddress] = now;
+		return true;
+	}
+
+	function assess(bytes32 _id, address _participantAddress, bytes32 _assessmentRule) public onlyRole(ROLE_PARTNER) returns (bool) {
+		require(_id[0] != 0);
+		require(collections[_id].timestamp != 0);
 		require(_participantAddress != address(0));
 		require(collections[_id].assessmentRules[_assessmentRule] > 0);
+		// Verify the participant being assessed has not been dropped previously.
+		require(collections[_id].droppedParticipants[_participantAddress] == 0);
 
 		// Add Gyan to participant and teacher wallets on assessment
 		uint256 assessedAcademicGyan = getAssessedAcademicGyan(collections[_id].academicGyan, collections[_id].assessmentRules[_assessmentRule]);
