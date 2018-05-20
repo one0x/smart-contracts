@@ -6,8 +6,9 @@ contract CollectionContract is BaseCollection {
 
 	function CollectionContract(
 		KarmaCoin _karma,
-		GyanCoin _gyan
-	) public BaseCollection(_karma, _gyan) {
+		GyanCoin _gyan,
+		ScholarshipContract _scholarships
+	) public BaseCollection(_karma, _gyan, _scholarships) {
 		// basic functions here
 
 	}

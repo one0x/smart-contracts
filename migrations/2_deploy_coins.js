@@ -2,6 +2,7 @@ const KarmaCoinCrowdsale = artifacts.require('./KarmaCoinCrowdsale.sol');
 const KarmaCoin = artifacts.require('./KarmaCoin.sol');
 const GyanCoin = artifacts.require('./GyanCoin.sol');
 const CollectionContract = artifacts.require('./CollectionContract.sol');
+const ScholarshipContract = artifacts.require('./ScholarshipContract.sol');
 
 module.exports = function(deployer, network, accounts) {
 	const openingTime = web3.eth.getBlock('latest').timestamp + 1; // two secs in the future
@@ -28,6 +29,12 @@ module.exports = function(deployer, network, accounts) {
 			})
 			.then(() => {
 				return deployer.deploy(
+						ScholarshipContract,
+						KarmaCoin.address
+				);
+			})
+			.then(() => {
+				return deployer.deploy(
 						KarmaCoinCrowdsale,
 						openingTime,
 						closingTime,
@@ -40,7 +47,8 @@ module.exports = function(deployer, network, accounts) {
 				return deployer.deploy(
 						CollectionContract,
 						KarmaCoin.address,
-						GyanCoin.address
+						GyanCoin.address,
+						ScholarshipContract.address
 				);
 			});
 };

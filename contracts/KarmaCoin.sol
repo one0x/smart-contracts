@@ -31,4 +31,5 @@ contract KarmaCoin is BurnableToken, MintableToken, CappedToken {
 		Transfer(burner, address(0), _value);
 	}
 
+
 }
