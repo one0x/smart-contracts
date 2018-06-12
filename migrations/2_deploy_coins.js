@@ -13,8 +13,8 @@ module.exports = function(deployer, network, accounts) {
 	const globalScholarshipFundAddress = accounts[2];
 	const _cap = 1000000000; // 1 Billion
 	const globalScholarshipFundAmount = 100000000; // 100 Mil
-	const foundersPool = accounts[3];
-	const advisoryPool = accounts[4];
+	const foundersPool = '0x0d51f094b2e02986ae9f6a6f7f51a1015b92e20f';
+	const advisoryPool = '0xe0b08da51cd16ee554f3fea1514420f67ceabfd6';
 	
 	return deployer
 			.then(() => {
