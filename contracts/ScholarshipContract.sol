@@ -20,6 +20,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 		mapping(address => uint256) participants;
 		address[] participantIndex;
 		mapping(bytes32 => bool) allowedCollections;
+		mapping(bytes32 => bool) allowedQuestions;
 	}
 
 	function ScholarshipContract(
@@ -27,6 +28,12 @@ contract ScholarshipContract is PbOwnable, RBAC {
 	) {
 		karmaCoin = _karma;
 	}
+
+	event ScholarshipCreate(bytes32 _id, bytes32 _type, address pbNode);
+	event ScholarshipJoin(bytes32 _id, address _participantAddress, address pbNode);
+	event ScholarshipAddCollection(bytes32 _id, bytes32 _collectionId, address pbNode);
+	event ScholarshipAddQuestion(bytes32 _id, bytes32 _questionId, address pbNode);
+	event ScholarshipDrop(bytes32 _id, address _participantAddress, address pbNode);
 
 	mapping(bytes32 => Scholarship) public scholarships;
 
@@ -52,6 +59,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 		for (uint8 i = 0; i < _allowedCollections.length; i++) {
 			scholarships[_id].allowedCollections[_allowedCollections[i]] = true;
 		}
+		ScholarshipCreate(_id, _type, msg.sender);
 		return true;
 	}
 
@@ -68,6 +76,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 
 		scholarships[_id].participants[_participantAddress] = now;
 		scholarships[_id].participantIndex.push(_participantAddress);
+		ScholarshipJoin(_id, _participantAddress, msg.sender);
 		return true;
 	}
 
@@ -78,12 +87,31 @@ contract ScholarshipContract is PbOwnable, RBAC {
 		require(scholarships[_id].allowedCollections[_collectionId] == false);
 
 		scholarships[_id].allowedCollections[_collectionId] = true;
+		ScholarshipAddCollection(_id, _collectionId, msg.sender);
+		return true;
+	}
+
+	function addQuestion(bytes32 _id, bytes32 _questionId) public onlyRole(ROLE_PARTNER) returns (bool) {
+		require(_id[0] != 0);
+		require(_questionId[0] != 0);
+		require(scholarships[_id].timestamp != 0);  // scholarship exists
+		require(scholarships[_id].allowedQuestions[_questionId] == false);  // question does not already exist.
+
+		scholarships[_id].allowedQuestions[_questionId] = true;
+		ScholarshipAddQuestion(_id, _questionId, msg.sender);
+		return true;
 	}
 
 	function getAllowedCollection(bytes32 _id, bytes32 _collectionId) public view returns (bool) {
 		require(_id[0] != 0);
 		require(_collectionId[0] != 0);
 		return scholarships[_id].allowedCollections[_collectionId];
+	}
+
+	function getAllowedQuestion(bytes32 _id, bytes32 _questionId) public view returns (bool) {
+		require(_id[0] != 0);
+		require(_questionId[0] != 0);
+		return scholarships[_id].allowedQuestions[_questionId];
 	}
 
 	function drop(bytes32 _id, address _participantAddress) public onlyRole(ROLE_PARTNER) returns (bool) {
@@ -93,6 +121,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 		require(scholarships[_id].participants[_participantAddress] != 0);
 
 		delete scholarships[_id].participants[_participantAddress];
+		ScholarshipDrop(_id, _participantAddress, msg.sender);
 		return true;
 	}
 
@@ -107,6 +136,10 @@ contract ScholarshipContract is PbOwnable, RBAC {
 
 	function getParticipant(bytes32 _id, address _participantAddress) public view returns (uint256) {
 		return scholarships[_id].participants[_participantAddress];
+	}
+
+	function getType(bytes32 _id) public view returns (bytes32) {
+		return scholarships[_id]._type;
 	}
 
 	function balanceOf(bytes32 _id) public view returns (uint256) {

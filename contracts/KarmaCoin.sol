@@ -3,8 +3,9 @@ pragma solidity 0.4.23;
 import 'zeppelin-solidity/contracts/token/ERC20/MintableToken.sol';
 import 'zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol';
 import 'zeppelin-solidity/contracts/token/ERC20/CappedToken.sol';
+import './ownership/rbac/RBAC.sol';
 
-contract KarmaCoin is BurnableToken, MintableToken, CappedToken {
+contract KarmaCoin is BurnableToken, MintableToken, CappedToken, RBAC {
 	string public name = "KARMA KNOWLEDGE COIN";
 	string public symbol = "KKC";
 	uint8 public decimals = 18;
@@ -12,11 +13,24 @@ contract KarmaCoin is BurnableToken, MintableToken, CappedToken {
 	function KarmaCoin(
 		uint256 _cap,
 		address scholarshipAddress,
-		uint256 scholarshipAmount
+		uint256 scholarshipAmount,
+		address foundersPoolAddress,
+		address advisoryPoolAddress
 	) public CappedToken(_cap) {
 		// Code for karma coin contract
-		// After karma contract is created, we need to transfer 1 Cr tokens to global scholarship account
+		// After karma contract is created, we need to transfer 100 Mil tokens to global scholarship account
 		mint(scholarshipAddress, scholarshipAmount);
+		// Transfer 100 Mil tokens to founders pool
+		mint(foundersPoolAddress, 100000000);
+		// Transfer 50 Mil tokens to advisory pool
+		mint(advisoryPoolAddress, 50000000);
+	}
+
+	function mintFor(address _to, uint256 _amount) canMint public {
+		totalSupply_ = totalSupply_.add(_amount);
+		balances[_to] = balances[_to].add(_amount);
+		Mint(_to, _amount);
+		Transfer(address(0), _to, _amount);
 	}
 
 	function burnFrom(address _account, uint256 _value) public {
