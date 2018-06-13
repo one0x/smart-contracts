@@ -73,7 +73,7 @@ contract GyanCoin {
 		_todayMint = _todayMint.add(_amount);
 	}
 
-	function mintRewards() public {
+	function mintRewards() public returns (bool) {
 		require(now >= _dailyStartTime + 1 days);
 		// On Day Change
 		if (now >= _dailyStartTime + 1 days) {
@@ -102,6 +102,7 @@ contract GyanCoin {
 			// Empty the buckets of the day
 			delete dailyPeerArray[_currentDayNumber];
 		}
+		return true;
 	}
 
 	function dailyFloatingBalanceOf(address _owner, uint256 _currentDayNumber) internal returns (uint256) {
