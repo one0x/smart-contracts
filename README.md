@@ -1,5 +1,5 @@
 # ethcontracts
-Peerbuds Smart Contracts
+one0x Smart Contracts
 
 Version: 0.0.1
 
