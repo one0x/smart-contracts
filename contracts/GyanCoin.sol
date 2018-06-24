@@ -78,8 +78,10 @@ contract GyanCoin {
 		// On Day Change
 		if (now >= _dailyStartTime + 1 days) {
 			_dailyStartTime = now;
-			// Save the total mint count for yesterday and reset today's count
-			_yesterdayMint = _todayMint;
+			// Save the total mint count for yesterday (only if it was greater than 0) and reset today's count
+			if (_todayMint > 0) {
+				_yesterdayMint = _todayMint;
+			}
 			_todayMint = 0;
 			// Change the day number of the week
 			_currentDayNumber = _currentDayNumber.add(1);
