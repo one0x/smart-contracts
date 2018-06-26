@@ -21,7 +21,6 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 	ScholarshipContract public scholarshipContract;
 
 	struct Collection {
-		bytes32 hash;
 		bytes32 _type;
 		uint256 academicGyan;
 		uint256 nonAcademicGyan;
@@ -29,6 +28,7 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		uint256 timestamp;
 		uint256 learningHours;
 		mapping(address => uint256) participants;
+		mapping(address => bytes32) hash;
 		mapping(address => uint256) droppedParticipants;
 		bytes32[] topics;
 		address[] participantIndex;
@@ -88,6 +88,18 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		return true;
 	}
 
+	function addHash(bytes32 _id, address _participantAddress, bytes32 _hash) public onlyRole(ROLE_PARTNER) returns (bool) {
+		require(_id[0] != 0);
+		require(_participantAddress != 0);
+		require(collections[_id].timestamp != 0);
+		require(collections[_id].hash[_participantAddress] == 0);
+		require(collections[_id].participants[_participantAddress] != 0);
+		require(_hash[0] != 0);
+
+		collections[_id].hash[_participantAddress] = _hash;
+		return true;
+	}
+
 	function getData(bytes32 _id) public view returns (bytes32, bytes32[], bytes32[], uint256, uint256, address, uint256) {
 		// Solidity does not yet support returning structs to web3
 		return (collections[_id]._type, collections[_id].topics, collections[_id].assessmentRuleKeys, collections[_id].academicGyan, collections[_id].nonAcademicGyan , collections[_id].teacher, collections[_id].timestamp);
@@ -97,8 +109,8 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		return collections[_id].teacher;
 	}
 
-	function getHash(bytes32 _id) public view returns (bytes32) {
-		return collections[_id].hash;
+	function getHashOf(bytes32 _id, address _participantAddress) public view returns (bytes32) {
+		return collections[_id].hash[_participantAddress];
 	}
 
 	function getLearningHours(bytes32 _id) public view returns (uint256) {
@@ -171,15 +183,19 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		return true;
 	}
 
-	function assess(bytes32 _id, address _participantAddress, bytes32 _assessmentRule, uint256 _engagementPercent, uint256 _commitmentPercent) public onlyRole(ROLE_PARTNER) returns (bool) {
+	function assess(bytes32 _id, address _participantAddress, bytes32 _assessmentRule, uint256 _engagementPercent, uint256 _commitmentPercent, bytes32 _hash) public onlyRole(ROLE_PARTNER) returns (bool) {
 		require(_id[0] != 0);
 		require(collections[_id].timestamp != 0);
 		require(_participantAddress != address(0));
+		require(collections[_id].hash[_participantAddress] == 0); // the hash for this collection has not been saved before
 		require(collections[_id].assessmentRules[_assessmentRule] > 0);
 		// Verify the participant being assessed has not been dropped previously.
 		require(collections[_id].droppedParticipants[_participantAddress] == 0);
 		// Verify the participant was not assessed previously
 		require(collections[_id].results['academic'][_participantAddress] == 0);
+
+		// Save the hash for this participant
+		collections[_id].hash[_participantAddress] = _hash;
 
 		// Add Gyan to participant and teacher wallets on assessment
 		uint256 assessedAcademicGyan = getAssessedAcademicGyan(collections[_id].academicGyan, collections[_id].assessmentRules[_assessmentRule]);
