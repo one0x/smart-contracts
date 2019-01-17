@@ -1,0 +1,69 @@
+{
+	"type": "",
+	"id": "",
+	"issuer": {
+		"id": "",
+		"ethAddress": "",
+		"profile": {
+		
+		}
+	},
+	"recipient": {
+		"id": "",
+		"ethAddress": "",
+		"profile": {
+		
+		}
+	},
+	"collection": {
+		"id": "",
+		"blockchainId": "",
+		"type": "",
+		"title": "",
+		"language": [],
+		"headline": "",
+		"description": "",
+		"difficultyLevel": "",
+		"prerequisites": "",
+		"maxSpots": "",
+		"videoUrls": [],
+		"imageUrls": [],
+		"totalHours": "",
+		"price": "",
+		"currency": "",
+		"cancellationPolicy": "",
+		"ageLimit": "",
+		"aboutHost": "",
+		"notes": "",
+		"status": "",
+		"academicGyan": "",
+		"nonAcademicGyan": "",
+		"createdAt": "",
+		"assessment": {
+		
+		},
+		"participation": {
+		
+		},
+		"certificateHtml": ""
+	},
+	"verification": {
+		"type": "sha256"
+	},
+	"issuedOn": "",
+	"displayHtml": "",
+	"universalIdentifier": "",
+	"signature": {
+		"type": [
+			"sha256"
+		],
+		"targetHash": "",
+		"anchors": [
+			{
+				"sourceId": "",
+				"type": "EthData",
+				"chain": "ethereumTestnet"
+			}
+		]
+	}
+}

@@ -1,0 +1,97 @@
+{
+  "contractName": "CollectionBasic",
+  "abi": [],
+  "bytecode": "0x6080604052348015600f57600080fd5b50603580601d6000396000f3006080604052600080fd00a165627a7a723058206fd5808dbabb21a085f299d2b2207bd7e2f209e55b8561750109f1c4380db4770029",
+  "deployedBytecode": "0x6080604052600080fd00a165627a7a723058206fd5808dbabb21a085f299d2b2207bd7e2f209e55b8561750109f1c4380db4770029",
+  "sourceMap": "137:29:1:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;137:29:1;;;;;;;",
+  "deployedSourceMap": "137:29:1:-;;;;;",
+  "source": "pragma solidity ^0.4.23;\n\n\n/**\n * @title CollectionBasic\n * @author Aakash Bansal @ one0x Inc.\n * @dev Collection Contract Interface\n */\ncontract CollectionBasic {\n\n}",
+  "sourcePath": "/Users/mattpeng/Desktop/github/current/oneX/smart-contracts/contracts/Collection/CollectionBasic.sol",
+  "ast": {
+    "absolutePath": "/Users/mattpeng/Desktop/github/current/oneX/smart-contracts/contracts/Collection/CollectionBasic.sol",
+    "exportedSymbols": {
+      "CollectionBasic": [
+        1297
+      ]
+    },
+    "id": 1298,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 1296,
+        "literals": [
+          "solidity",
+          "^",
+          "0.4",
+          ".23"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:1"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": "@title CollectionBasic\n@author Aakash Bansal @ one0x Inc.\n@dev Collection Contract Interface",
+        "fullyImplemented": true,
+        "id": 1297,
+        "linearizedBaseContracts": [
+          1297
+        ],
+        "name": "CollectionBasic",
+        "nodeType": "ContractDefinition",
+        "nodes": [],
+        "scope": 1298,
+        "src": "137:29:1"
+      }
+    ],
+    "src": "0:166:1"
+  },
+  "legacyAST": {
+    "absolutePath": "/Users/mattpeng/Desktop/github/current/oneX/smart-contracts/contracts/Collection/CollectionBasic.sol",
+    "exportedSymbols": {
+      "CollectionBasic": [
+        1297
+      ]
+    },
+    "id": 1298,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 1296,
+        "literals": [
+          "solidity",
+          "^",
+          "0.4",
+          ".23"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:1"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": "@title CollectionBasic\n@author Aakash Bansal @ one0x Inc.\n@dev Collection Contract Interface",
+        "fullyImplemented": true,
+        "id": 1297,
+        "linearizedBaseContracts": [
+          1297
+        ],
+        "name": "CollectionBasic",
+        "nodeType": "ContractDefinition",
+        "nodes": [],
+        "scope": 1298,
+        "src": "137:29:1"
+      }
+    ],
+    "src": "0:166:1"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.4.24+commit.e67f0147.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "2.0.1",
+  "updatedAt": "2019-01-14T21:40:38.963Z"
+}
