@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.0;
 
 import "./KarmaCoin.sol";
 
@@ -28,10 +28,13 @@ contract GyanCoin {
 
 	mapping(address => Gyan) gyanCoins;
 
+	event NewFloatingBalance(address _owner, uint256 _amount, address pbNode);
+	event NewFixedBalance(address _owner, uint256 _amount, address pbNode);
+
 	constructor(
 		KarmaCoin _karma
 	) public {
-		require(_karma != address(0));
+		require(_karma != KarmaCoin(0));
 
 		karmaCoin = _karma;
 
@@ -71,44 +74,47 @@ contract GyanCoin {
 		gyanCoins[_to].floatingBalance = gyanCoins[_to].floatingBalance.add(_amount);
 		gyanCoins[_to].timestampIndex.push(now);
 		_todayMint = _todayMint.add(_amount);
+		// Send Event
+		emit NewFloatingBalance(_to, _amount, msg.sender);
 	}
 
 	function mintRewards() public returns (bool) {
 		require(now >= _dailyStartTime + 1 days);
 		// On Day Change
-		if (now >= _dailyStartTime + 1 days) {
-			_dailyStartTime = now;
-			// Save the total mint count for yesterday (only if it was greater than 0) and reset today's count
-			if (_todayMint > 0) {
-				_yesterdayMint = _todayMint;
-			}
-			_todayMint = 0;
-			// Change the day number of the week
-			_currentDayNumber = _currentDayNumber.add(1);
-			// On week change, reset day number to 1
-			if (now >= _weeklyStartTime + 7 days) {
-				_weeklyStartTime = now;
-				_currentDayNumber = 1;
-			}
-			// Send out rewards to every peer who learnt last week
-			// TODO: Currently rewarding everyone equally. Change to reward based on elliptic curve.
-			for (uint i = 0; i < dailyPeerArray[_currentDayNumber].length; i++) {
-				uint256 percentGyanEarnedToday = dailyFloatingBalanceOf(dailyPeerArray[_currentDayNumber][i], _currentDayNumber).mul(100).div(_yesterdayMint);
-				// Reward user with Karma
-				karmaCoin.mintFor(dailyPeerArray[_currentDayNumber][i], dailyKarmaMint().mul(65).div(100).mul(percentGyanEarnedToday).div(100));
-				// Move Gyan from floating to fixed balance
-				gyanCoins[dailyPeerArray[_currentDayNumber][i]].fixedBalance = gyanCoins[dailyPeerArray[_currentDayNumber][i]].fixedBalance.add(dailyFloatingBalanceOf(dailyPeerArray[_currentDayNumber][i], _currentDayNumber));
-				gyanCoins[dailyPeerArray[_currentDayNumber][i]].floatingBalance = gyanCoins[dailyPeerArray[_currentDayNumber][i]].floatingBalance.sub(dailyFloatingBalanceOf(dailyPeerArray[_currentDayNumber][i], _currentDayNumber));
-				delete dailyPeerBucket[_currentDayNumber][dailyPeerArray[_currentDayNumber][i]];
-			}
-			// Empty the buckets of the day
-			delete dailyPeerArray[_currentDayNumber];
+		_dailyStartTime = now;
+		// Save the total mint count for yesterday (only if it was greater than 0) and reset today's count
+		if (_todayMint > 0) {
+			_yesterdayMint = _todayMint;
 		}
+		_todayMint = 0;
+		// Change the day number of the week
+		_currentDayNumber = _currentDayNumber.add(1);
+		// On week change, reset day number to 1
+		if (now >= _weeklyStartTime + 7 days) {
+			_weeklyStartTime = now;
+			_currentDayNumber = 1;
+		}
+		// Send out rewards to every peer who learnt last week
+		// TODO: Currently rewarding everyone equally. Change to reward based on elliptic curve.
+		for (uint i = 0; i < dailyPeerArray[_currentDayNumber].length; i++) {
+			uint256 percentGyanEarnedToday = dailyFloatingBalanceOf(dailyPeerArray[_currentDayNumber][i], _currentDayNumber).mul(100).div(_yesterdayMint);
+			// Reward user with Karma
+			karmaCoin.mintFor(dailyPeerArray[_currentDayNumber][i], dailyKarmaMint().mul(65).div(100).mul(percentGyanEarnedToday).div(100));
+			// Move Gyan from floating to fixed balance
+			gyanCoins[dailyPeerArray[_currentDayNumber][i]].fixedBalance = gyanCoins[dailyPeerArray[_currentDayNumber][i]].fixedBalance.add(dailyFloatingBalanceOf(dailyPeerArray[_currentDayNumber][i], _currentDayNumber));
+			gyanCoins[dailyPeerArray[_currentDayNumber][i]].floatingBalance = gyanCoins[dailyPeerArray[_currentDayNumber][i]].floatingBalance.sub(dailyFloatingBalanceOf(dailyPeerArray[_currentDayNumber][i], _currentDayNumber));
+			// Send events
+			emit NewFloatingBalance(dailyPeerArray[_currentDayNumber][i], gyanCoins[dailyPeerArray[_currentDayNumber][i]].floatingBalance, msg.sender);
+			emit NewFixedBalance(dailyPeerArray[_currentDayNumber][i], gyanCoins[dailyPeerArray[_currentDayNumber][i]].fixedBalance, msg.sender);
+			delete dailyPeerBucket[_currentDayNumber][dailyPeerArray[_currentDayNumber][i]];
+		}
+		// Empty the buckets of the day
+		delete dailyPeerArray[_currentDayNumber];
 		return true;
 	}
 
-	function dailyFloatingBalanceOf(address _owner, uint256 _currentDayNumbers) internal returns (uint256) {
-		return dailyPeerBucket[_currentDayNumbers][_owner];
+	function dailyFloatingBalanceOf(address _owner, uint256 _currentDayNum) internal returns (uint256) {
+		return dailyPeerBucket[_currentDayNum][_owner];
 	}
 
 	/**
@@ -121,7 +127,7 @@ contract GyanCoin {
 
 	/**
 	  * @dev Gets the average number of peers who are eligible for karma rewards every day over the last 7 days
-	  * @return An uint256 representing the amount of karma minted everyday.
+	  * @return An uint256 representing the average number of peers who earn Gyan everyday
 	  */
 	function averageDailyPeers() public view returns (uint256 averagePeers) {
 		return (dailyPeerArray[1].length + dailyPeerArray[2].length + dailyPeerArray[3].length + dailyPeerArray[4].length + dailyPeerArray[5].length + dailyPeerArray[6].length + dailyPeerArray[7].length).div(7);

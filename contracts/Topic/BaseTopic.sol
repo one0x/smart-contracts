@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.0;
 import "../ownership/rbac/RBAC.sol";
 import "../ownership/PbOwnable.sol";
 
@@ -8,7 +8,7 @@ contract BaseTopic is PbOwnable, RBAC {
 	bytes32[] topicArray;
 	mapping(address => bytes32[]) userTopics;
 
-	constructor(){
+	constructor() public {
 
 	}
 

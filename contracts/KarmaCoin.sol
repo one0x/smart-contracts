@@ -1,22 +1,24 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
-import 'zeppelin-solidity/contracts/token/ERC20/MintableToken.sol';
-import 'zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol';
-import 'zeppelin-solidity/contracts/token/ERC20/CappedToken.sol';
+import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Mintable.sol';
+import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol';
+import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Burnable.sol';
+import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Capped.sol';
 import './ownership/rbac/RBAC.sol';
 
-contract KarmaCoin is BurnableToken, MintableToken, CappedToken, RBAC {
-	string public name = "KARMA KNOWLEDGE COIN";
-	string public symbol = "KKC";
-	uint8 public decimals = 18;
+contract KarmaCoin is ERC20Detailed, ERC20Burnable, ERC20Mintable, ERC20Capped, RBAC {
+	string public _name = "KARMA KNOWLEDGE COIN";
+	string public _symbol = "KKC";
+	uint8 public _decimals = 18;
 
 	constructor(
 		uint256 _cap,
 		address scholarshipAddress,
 		uint256 scholarshipAmount,
 		address foundersPoolAddress,
-		address advisoryPoolAddress
-	) public CappedToken(_cap) {
+		address advisoryPoolAddress,
+		address communityPoolAddress
+	) public ERC20Detailed(_name, _symbol, _decimals) ERC20Capped(_cap) {
 		// Code for karma coin contract
 		// After karma contract is created, we need to transfer 100 Mil tokens to global scholarship account
 		mint(scholarshipAddress, scholarshipAmount);
@@ -24,26 +26,35 @@ contract KarmaCoin is BurnableToken, MintableToken, CappedToken, RBAC {
 		mint(foundersPoolAddress, 100000000);
 		// Transfer 50 Mil tokens to advisory pool
 		mint(advisoryPoolAddress, 50000000);
+		// Transfer 10 Mil tokens to community pool
+		mint(communityPoolAddress, 10000000);
 	}
 
-	function mintFor(address _to, uint256 _amount) canMint public {
-		totalSupply_ = totalSupply_.add(_amount);
-		balances[_to] = balances[_to].add(_amount);
-		Mint(_to, _amount);
-		Transfer(address(0), _to, _amount);
+	function transferFor(address _from, address _to, uint256 _amount) public {
+		require(_to != address(0));
+		require(_from != address(0));
+		require(_amount <= _balances[_from]);
+
+		// SafeMath.sub will throw if there is not enough balance.
+		_balances[_from] = _balances[_from].sub(_amount);
+		_balances[_to] = _balances[_to].add(_amount);
+		emit Transfer(_from, _to, _amount);
+	}
+
+	function mintFor(address _to, uint256 _amount) onlyMinter public {
+		_totalSupply = _totalSupply.add(_amount);
+		_balances[_to] = _balances[_to].add(_amount);
+		emit Transfer(address(0), _to, _amount);
 	}
 
 	function burnFrom(address _account, uint256 _value) public {
-		require(_value <= balances[_account]);
+		require(_value <= _balances[_account]);
 		// no need to require value <= totalSupply, since that would imply the
 		// sender's balance is greater than the totalSupply, which *should* be an assertion failure
 
 		address burner = _account;
-		balances[burner] = balances[burner].sub(_value);
-		totalSupply_ = totalSupply_.sub(_value);
-		Burn(burner, _value);
-		Transfer(burner, address(0), _value);
+		_balances[burner] = _balances[burner].sub(_value);
+		_totalSupply = _totalSupply.sub(_value);
+		emit Transfer(burner, address(0), _value);
 	}
-
-
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.0;
 
 import "../GyanCoin.sol";
 import "../KarmaCoin.sol";
@@ -47,17 +47,17 @@ contract BaseQuestion is PbOwnable, RBAC {
 		GyanCoin _gyan,
 		KarmaCoin _karma,
 		ScholarshipContract _scholarship
-	){
-		require(_gyan != address(0));
-		require(_karma != address(0));
-		require(_scholarship != address(0));
+	) public {
+		require(_gyan != GyanCoin(0));
+		require(_karma != KarmaCoin(0));
+		require(_scholarship != ScholarshipContract(0));
 
 		gyanCoin = _gyan;
 		karmaCoin = _karma;
 		scholarshipContract = _scholarship;
 	}
 
-	function create(bytes32 _id, bytes32 _communityId, address _owner, bytes32 _scholarshipId, bytes32 _hash, uint256 _gyan, bytes32[] _topics) public onlyRole(ROLE_PARTNER) returns (bool) {
+	function create(bytes32 _id, bytes32 _communityId, address _owner, bytes32 _scholarshipId, bytes32 _hash, uint256 _gyan, bytes32[] memory _topics) public onlyRole(ROLE_PARTNER) returns (bool) {
 		require(_id[0] != 0);
 		require(questions[_id].timestamp == 0);
 		require(_communityId[0] != 0);
@@ -88,7 +88,7 @@ contract BaseQuestion is PbOwnable, RBAC {
 			karmaCoin.burnFrom(scholarshipContract.getWalletAddress(_scholarshipId), getKarmaToBurn(_gyan));
 		}
 
-		QuestionCreate(_id, _communityId, _owner, _hash, _gyan, _topics, now, msg.sender);
+		emit QuestionCreate(_id, _communityId, _owner, _hash, _gyan, _topics, now, msg.sender);
 		return true;
 	}
 
@@ -105,7 +105,7 @@ contract BaseQuestion is PbOwnable, RBAC {
 		questions[_questionId].answers[_id].timestamp = now;
 		questions[_questionId].answerIndex.push(_id);
 
-		QuestionAddAnswer(_id, _questionId, _owner, _hash, now, msg.sender);
+		emit QuestionAddAnswer(_id, _questionId, _owner, _hash, now, msg.sender);
 		return true;
 	}
 
@@ -124,7 +124,7 @@ contract BaseQuestion is PbOwnable, RBAC {
 		// Add gyan to questioner
 		gyanCoin.mintFor(questions[_questionId].owner, questions[_questionId].gyan);
 
-		QuestionAcceptAnswer(_id, _questionId, msg.sender);
+		emit QuestionAcceptAnswer(_id, _questionId, msg.sender);
 		return true;
 	}
 
@@ -137,7 +137,7 @@ contract BaseQuestion is PbOwnable, RBAC {
 
 		questions[_questionId].answers[_id].flag = true;
 
-		QuestionFlagAnswer(_id, _questionId, msg.sender);
+		emit QuestionFlagAnswer(_id, _questionId, msg.sender);
 		return true;
 	}
 
@@ -150,7 +150,7 @@ contract BaseQuestion is PbOwnable, RBAC {
 
 		questions[_questionId].answers[_id].flag = false;
 
-		QuestionUnFlagAnswer(_id, _questionId, msg.sender);
+		emit QuestionUnFlagAnswer(_id, _questionId, msg.sender);
 		return true;
 	}
 
@@ -175,16 +175,16 @@ contract BaseQuestion is PbOwnable, RBAC {
 			questions[_id].open = false;
 		}
 
-		QuestionClose(_id, msg.sender);
+		emit QuestionClose(_id, msg.sender);
 		return true;
 	}
 
-	function getQuestion(bytes32 _id) public view returns (bytes32, address, bytes32, uint256, bytes32[], uint256) {
+	function getQuestion(bytes32 _id) public view returns (bytes32, address, bytes32, uint256, bytes32[] memory, uint256) {
 		// Solidity does not yet support returning structs to web3
 		return (questions[_id].communityId, questions[_id].owner, questions[_id].hash, questions[_id].gyan, questions[_id].topics, questions[_id].timestamp);
 	}
 
-	function getAnswers(bytes32 _id) public view returns (bytes32[]) {
+	function getAnswers(bytes32 _id) public view returns (bytes32[] memory) {
 		// Solidity does not yet support returning structs to web3
 		return questions[_id].answerIndex;
 	}

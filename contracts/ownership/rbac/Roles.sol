@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.0;
 
 
 /**
@@ -15,8 +15,7 @@ library Roles {
   /**
    * @dev give an address access to this role
    */
-  function add(Role storage role, address addr)
-    internal
+  function add(Role storage role, address addr) internal
   {
     role.bearer[addr] = true;
   }
@@ -25,7 +24,7 @@ library Roles {
    * @dev remove an address' access to this role
    */
   function remove(Role storage role, address addr)
-    internal
+  internal
   {
     role.bearer[addr] = false;
   }
@@ -35,8 +34,8 @@ library Roles {
    * // reverts
    */
   function check(Role storage role, address addr)
-    view
-    internal
+  view
+  internal
   {
     require(has(role, addr));
   }
@@ -46,9 +45,9 @@ library Roles {
    * @return bool
    */
   function has(Role storage role, address addr)
-    view
-    internal
-    returns (bool)
+  view
+  internal
+  returns (bool)
   {
     return role.bearer[addr];
   }

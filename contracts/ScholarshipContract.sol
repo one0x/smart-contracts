@@ -1,4 +1,4 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.5.0;
 
 import "./KarmaCoin.sol";
 import "./ownership/PbOwnable.sol";
@@ -25,7 +25,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 
 	constructor(
 		KarmaCoin _karma
-	) {
+	) public {
 		karmaCoin = _karma;
 	}
 
@@ -37,7 +37,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 
 	mapping(bytes32 => Scholarship) public scholarships;
 
-	function create(bytes32 _id, address _ownerAddress, bytes32 _type, bytes32 _title, bytes32 _description, uint256 _prerequisite, uint256 _transactionLimit, address _walletAddress, bytes32[] _allowedCollections) public onlyRole(ROLE_PARTNER) returns (bool) {
+	function create(bytes32 _id, address _ownerAddress, bytes32 _type, bytes32 _title, bytes32 _description, uint256 _prerequisite, uint256 _transactionLimit, address _walletAddress, bytes32[] memory _allowedCollections) public onlyRole(ROLE_PARTNER) returns (bool) {
 		require(_id[0] != 0);
 		require(_ownerAddress != address(0));
 		require(_type[0] != 0);
@@ -59,7 +59,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 		for (uint8 i = 0; i < _allowedCollections.length; i++) {
 			scholarships[_id].allowedCollections[_allowedCollections[i]] = true;
 		}
-		ScholarshipCreate(_id, _type, msg.sender);
+		emit ScholarshipCreate(_id, _type, msg.sender);
 		return true;
 	}
 
@@ -76,7 +76,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 
 		scholarships[_id].participants[_participantAddress] = now;
 		scholarships[_id].participantIndex.push(_participantAddress);
-		ScholarshipJoin(_id, _participantAddress, msg.sender);
+		emit ScholarshipJoin(_id, _participantAddress, msg.sender);
 		return true;
 	}
 
@@ -87,7 +87,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 		require(scholarships[_id].allowedCollections[_collectionId] == false);
 
 		scholarships[_id].allowedCollections[_collectionId] = true;
-		ScholarshipAddCollection(_id, _collectionId, msg.sender);
+		emit ScholarshipAddCollection(_id, _collectionId, msg.sender);
 		return true;
 	}
 
@@ -98,7 +98,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 		require(scholarships[_id].allowedQuestions[_questionId] == false);  // question does not already exist.
 
 		scholarships[_id].allowedQuestions[_questionId] = true;
-		ScholarshipAddQuestion(_id, _questionId, msg.sender);
+		emit ScholarshipAddQuestion(_id, _questionId, msg.sender);
 		return true;
 	}
 
@@ -121,7 +121,7 @@ contract ScholarshipContract is PbOwnable, RBAC {
 		require(scholarships[_id].participants[_participantAddress] != 0);
 
 		delete scholarships[_id].participants[_participantAddress];
-		ScholarshipDrop(_id, _participantAddress, msg.sender);
+		emit ScholarshipDrop(_id, _participantAddress, msg.sender);
 		return true;
 	}
 

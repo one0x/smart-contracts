@@ -1,6 +1,6 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.0;
 
-import "./Roles.sol";
+import 'openzeppelin-solidity/contracts/access/Roles.sol';
 
 
 /**
@@ -25,9 +25,7 @@ contract RBAC {
   /**
    * @dev constructor. Sets msg.sender as admin by default
    */
-  constructor()
-    public
-  {
+  constructor() public {
     addRole(msg.sender, ROLE_ADMIN);
     addRole(msg.sender, ROLE_PARTNER);
   }
@@ -38,11 +36,8 @@ contract RBAC {
    * @param roleName the name of the role
    * // reverts
    */
-  function checkRole(address addr, string roleName)
-    view
-    public
-  {
-    roles[roleName].check(addr);
+  function checkRole(address addr, string memory roleName) view public {
+    roles[roleName].has(addr);
   }
 
   /**
@@ -51,11 +46,7 @@ contract RBAC {
    * @param roleName the name of the role
    * @return bool
    */
-  function hasRole(address addr, string roleName)
-    view
-    public
-    returns (bool)
-  {
+  function hasRole(address addr, string memory roleName) view public returns (bool) {
     return roles[roleName].has(addr);
   }
 
@@ -64,10 +55,7 @@ contract RBAC {
    * @param addr address
    * @param roleName the name of the role
    */
-  function adminAddRole(address addr, string roleName)
-    onlyAdmin
-    public
-  {
+  function adminAddRole(address addr, string memory roleName) onlyAdmin public {
     addRole(addr, roleName);
   }
 
@@ -76,10 +64,7 @@ contract RBAC {
    * @param addr address
    * @param roleName the name of the role
    */
-  function adminRemoveRole(address addr, string roleName)
-    onlyAdmin
-    public
-  {
+  function adminRemoveRole(address addr, string memory roleName) onlyAdmin public {
     removeRole(addr, roleName);
   }
 
@@ -88,11 +73,9 @@ contract RBAC {
    * @param addr address
    * @param roleName the name of the role
    */
-  function addRole(address addr, string roleName)
-    internal
-  {
+  function addRole(address addr, string memory roleName) internal {
     roles[roleName].add(addr);
-    RoleAdded(addr, roleName);
+    emit RoleAdded(addr, roleName);
   }
 
   /**
@@ -100,11 +83,9 @@ contract RBAC {
    * @param addr address
    * @param roleName the name of the role
    */
-  function removeRole(address addr, string roleName)
-    internal
-  {
+  function removeRole(address addr, string memory roleName) internal {
     roles[roleName].remove(addr);
-    RoleRemoved(addr, roleName);
+    emit RoleRemoved(addr, roleName);
   }
 
   /**
@@ -112,8 +93,7 @@ contract RBAC {
    * @param roleName the name of the role
    * // reverts
    */
-  modifier onlyRole(string roleName)
-  {
+  modifier onlyRole(string memory roleName) {
     checkRole(msg.sender, roleName);
     _;
   }
@@ -122,8 +102,7 @@ contract RBAC {
    * @dev modifier to scope access to admins
    * // reverts
    */
-  modifier onlyAdmin()
-  {
+  modifier onlyAdmin() {
     checkRole(msg.sender, ROLE_ADMIN);
     _;
   }

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.0;
 
 import "../ownership/rbac/RBAC.sol";
 import "../ownership/PbOwnable.sol";
@@ -10,7 +10,5 @@ import "../KarmaCoin.sol";
 * @dev Handled collection create, joining and assessment
 */
 contract BaseScholarship is PbOwnable, RBAC {
-
-
 
 }

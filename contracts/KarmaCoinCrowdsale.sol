@@ -1,8 +1,8 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.0;
 
-import 'zeppelin-solidity/contracts/token/ERC20/MintableToken.sol';
-import 'zeppelin-solidity/contracts/crowdsale/emission/MintedCrowdsale.sol';
-import 'zeppelin-solidity/contracts/crowdsale/validation/TimedCrowdsale.sol';
+import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Mintable.sol';
+import 'openzeppelin-solidity/contracts/crowdsale/emission/MintedCrowdsale.sol';
+import 'openzeppelin-solidity/contracts/crowdsale/validation/TimedCrowdsale.sol';
 
 
 contract KarmaCoinCrowdsale is TimedCrowdsale, MintedCrowdsale {
@@ -10,8 +10,8 @@ contract KarmaCoinCrowdsale is TimedCrowdsale, MintedCrowdsale {
 		uint256 _openingTime,
 		uint256 _closingTime,
 		uint256 _rate,
-		address _wallet,
-		MintableToken _token
+		address payable _wallet,
+		ERC20Mintable _token
 	) public TimedCrowdsale(_openingTime, _closingTime) Crowdsale(_rate, _wallet, _token) {
 
 	}

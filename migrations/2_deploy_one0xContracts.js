@@ -9,30 +9,21 @@ const roles = artifacts.require('./ownership/rbac/roles.sol');
 const PbOwnable = artifacts.require('./ownership/PbOwnable.sol');
 
 
-
 module.exports = function(deployer, network, accounts) {
 	const openingTime = web3.eth.getBlock('latest').timestamp + 1; // two secs in the future
-	const closingTime = openingTime + 86400 * 20; // 20 days
-	const rate = new web3.BigNumber(4000); // 4000 Karma tokens for every ether
+	const closingTime = openingTime + 86400 * 365; // 365 days
+	const rate = new web3.utils.BN(5000); // 5000 Karma tokens for every ether
 	const wallet = accounts[1];
 	const globalScholarshipFundAddress = accounts[2];
 	const _cap = 1000000000; // 1 Billion
 	const globalScholarshipFundAmount = 100000000; // 100 Mil
-	const foundersPool = '0x0d51f094b2e02986ae9f6a6f7f51a1015b92e20f';
-	const advisoryPool = '0xe0b08da51cd16ee554f3fea1514420f67ceabfd6';
-
-
-
-///////////deploying contracts for testing
-	deployer.deploy(RBACs)
-	deployer.deploy(PbOwnable)
-////////////////////////////////////////////
-
-
+	const foundersPool = '0xada2dd467c50535a4a3dc4ace5b92dcedc179fbc';
+	const advisoryPool = '0x81cd9f0f55f90f58b8ec25e577d12f4392b34f0a';   // PRODUCTION
+	// const advisoryPool = '0xfBF2284fa5ceB75Dad3ac8703cE8e90b4E4D5dd3';      // DEVELOPMENT
+	const communityPool = '0xcbcaccb1e9b4a3d9c02402ac090e4be1c936780f';
 
 
 	return deployer
-
 			.then(() => {
 				return deployer.deploy(
 						KarmaCoin,
@@ -40,7 +31,8 @@ module.exports = function(deployer, network, accounts) {
 						globalScholarshipFundAddress,
 						globalScholarshipFundAmount,
 						foundersPool,
-						advisoryPool
+						advisoryPool,
+						communityPool
 				);
 			})
 			.then(() => {
@@ -63,7 +55,7 @@ module.exports = function(deployer, network, accounts) {
 						ScholarshipContract.address
 				);
 			})
-			/*.then(() => {
+			.then(() => {
 				return deployer.deploy(
 						KarmaCoinCrowdsale,
 						openingTime,
@@ -72,22 +64,13 @@ module.exports = function(deployer, network, accounts) {
 						wallet,
 						KarmaCoin.address
 				);
-			})*/
+			})
 			.then(() => {
 				return deployer.deploy(
 						CollectionContract,
 						KarmaCoin.address,
 						GyanCoin.address,
 						ScholarshipContract.address
-				);
-			})
-
-
-			/////////Deploying these contracts for the unit tests
-			.then(() => {
-				return deployer.deploy(
-						roles,
-						PbOwnable
 				);
 			});
 };

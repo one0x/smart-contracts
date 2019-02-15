@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.0;
 
 import "./CollectionBasic.sol";
 import "../KarmaCoin.sol";
@@ -47,10 +47,10 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 	event CollectionAssess(bytes32 _id, address _participantAddress, bytes32 _assessmentResult, uint256 academicGyan, uint256 engagementGyan, uint256 commitmentGyan, address pbNode);
 	event CollectionDrop(bytes32 _id, address _participantAddress, address pbNode);
 
-	constructor(KarmaCoin _karma, GyanCoin _gyan, ScholarshipContract _scholarships) {
-		require(_karma != address(0));
-		require(_gyan != address(0));
-		require(_scholarships != address(0));
+	constructor(KarmaCoin _karma, GyanCoin _gyan, ScholarshipContract _scholarships) public {
+		require(_karma != KarmaCoin(0));
+		require(_gyan != GyanCoin(0));
+		require(_scholarships != ScholarshipContract(0));
 
 		karmaCoin = _karma;
 		gyanCoin = _gyan;
@@ -58,7 +58,7 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 
 	}
 
-	function create(bytes32 _id, address _teacherAddress, bytes32 _type, uint256 _learningHours, uint256 _academicGyan, uint256 _nonAcademicGyan, bytes32[] _assessmentRuleKeys, uint256[] _assessmentRuleValues, uint256[] _nonAcademicRules, bytes32[] _topics) public onlyRole(ROLE_PARTNER) returns (bool) {
+	function create(bytes32 _id, address _teacherAddress, bytes32 _type, uint256 _learningHours, uint256 _academicGyan, uint256 _nonAcademicGyan, bytes32[] memory _assessmentRuleKeys, uint256[] memory _assessmentRuleValues, uint256[] memory _nonAcademicRules, bytes32[] memory _topics) public onlyRole(ROLE_PARTNER) returns (bool) {
 		require(_id[0] != 0);
 		require(collections[_id].timestamp == 0);
 		require(_teacherAddress != address(0));
@@ -84,13 +84,13 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 			collections[_id].assessmentRules[_assessmentRuleKeys[i]] = _assessmentRuleValues[i];
 			collections[_id].assessmentRuleKeys.push(_assessmentRuleKeys[i]);
 		}
-		CollectionCreate(_id, _type, msg.sender);
+		emit CollectionCreate(_id, _type, msg.sender);
 		return true;
 	}
 
 	function addHash(bytes32 _id, address _participantAddress, bytes32 _hash) public onlyRole(ROLE_PARTNER) returns (bool) {
 		require(_id[0] != 0);
-		require(_participantAddress != 0);
+		require(_participantAddress != address(0));
 		require(collections[_id].timestamp != 0);
 		require(collections[_id].hash[_participantAddress] == 0);
 		require(collections[_id].participants[_participantAddress] != 0);
@@ -100,7 +100,7 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		return true;
 	}
 
-	function getData(bytes32 _id) public view returns (bytes32, bytes32[], bytes32[], uint256, uint256, address, uint256) {
+	function getData(bytes32 _id) public view returns (bytes32, bytes32[] memory, bytes32[] memory, uint256, uint256, address, uint256) {
 		// Solidity does not yet support returning structs to web3
 		return (collections[_id]._type, collections[_id].topics, collections[_id].assessmentRuleKeys, collections[_id].academicGyan, collections[_id].nonAcademicGyan , collections[_id].teacher, collections[_id].timestamp);
 	}
@@ -133,8 +133,12 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		return collections[_id]._type;
 	}
 
-	function getParticipants(bytes32 _id) public view returns (address[]) {
+	function getParticipants(bytes32 _id) public view returns (address[] memory) {
 		return collections[_id].participantIndex;
+	}
+
+	function getParticipant(bytes32 _id, address _participantAddress) public view returns (uint256) {
+		return collections[_id].participants[_participantAddress];
 	}
 
 	function getResultOf(bytes32 _id, address _participantAddress) public view returns (uint256, uint256, uint256) {
@@ -166,7 +170,7 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		}
 		collections[_id].participants[_participantAddress] = now;
 		collections[_id].participantIndex.push(_participantAddress);
-		CollectionJoin(_id, _participantAddress, msg.sender);
+		emit CollectionJoin(_id, _participantAddress, msg.sender);
 		return true;
 	}
 
@@ -179,16 +183,20 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		require(collections[_id].droppedParticipants[_participantAddress] == 0);
 
 		collections[_id].droppedParticipants[_participantAddress] = now;
-		CollectionDrop(_id, _participantAddress, msg.sender);
+		emit CollectionDrop(_id, _participantAddress, msg.sender);
 		return true;
 	}
 
 	function assess(bytes32 _id, address _participantAddress, bytes32 _assessmentRule, uint256 _engagementPercent, uint256 _commitmentPercent, bytes32 _hash) public onlyRole(ROLE_PARTNER) returns (bool) {
 		require(_id[0] != 0);
 		require(collections[_id].timestamp != 0);
-		require(_participantAddress != address(0));
-		require(collections[_id].hash[_participantAddress] == 0); // the hash for this collection has not been saved before
+		// Verify this assessment rule is  valid based on collection definition
 		require(collections[_id].assessmentRules[_assessmentRule] > 0);
+		require(_participantAddress != address(0));
+		// Verify the participant exists for this collection.
+		require(collections[_id].participants[_participantAddress] != 0);
+		// Verify the hash for this participant has not been saved before
+		require(collections[_id].hash[_participantAddress] == 0);
 		// Verify the participant being assessed has not been dropped previously.
 		require(collections[_id].droppedParticipants[_participantAddress] == 0);
 		// Verify the participant was not assessed previously
@@ -207,7 +215,7 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		collections[_id].results['academic'][_participantAddress] = collections[_id].assessmentRules[_assessmentRule];
 		collections[_id].results['engagement'][_participantAddress] = _engagementPercent;
 		collections[_id].results['commitment'][_participantAddress] = _commitmentPercent;
-		CollectionAssess(_id, _participantAddress, _assessmentRule, assessedAcademicGyan, assessedEngagementGyan, assessedCommitmentGyan, msg.sender);
+		emit CollectionAssess(_id, _participantAddress, _assessmentRule, assessedAcademicGyan, assessedEngagementGyan, assessedCommitmentGyan, msg.sender);
 		return true;
 	}
 
@@ -220,15 +228,15 @@ contract BaseCollection is CollectionBasic, PbOwnable, RBAC {
 		return _gyan.mul(dailyKarmaMint.div(dailyGyanEarn));
 	}
 
-	function getAssessedAcademicGyan(uint256 _totalAcademicGyan, uint256 _percentGyan) pure returns (uint256) {
+	function getAssessedAcademicGyan(uint256 _totalAcademicGyan, uint256 _percentGyan) public pure returns (uint256) {
 		return (_totalAcademicGyan.mul(_percentGyan)).div(100);
 	}
 
-	function getAssessedEngagementGyan(uint256 _totalNonAcademicGyan, uint256 _engagementRule, uint256 _percentGyan) pure returns (uint256) {
+	function getAssessedEngagementGyan(uint256 _totalNonAcademicGyan, uint256 _engagementRule, uint256 _percentGyan) public pure returns (uint256) {
 		return (_totalNonAcademicGyan.mul(_engagementRule).div(100).mul(_percentGyan)).div(100);
 	}
 
-	function getAssessedCommitmentGyan(uint256 _totalNonAcademicGyan, uint256 _commitmentRule, uint256 _percentGyan) pure returns (uint256) {
+	function getAssessedCommitmentGyan(uint256 _totalNonAcademicGyan, uint256 _commitmentRule, uint256 _percentGyan) public pure returns (uint256) {
 		return (_totalNonAcademicGyan.mul(_commitmentRule).div(100).mul(_percentGyan)).div(100);
 	}
 
